@@ -1,10 +1,18 @@
 flows:
   greet_user:
     description: |
-      Respond when the user's current message is a greeting,
-      such as "hi", "hello", or "good morning".
+      Respond when the user's current message is a greeting.
+
+      Examples:
+      - "hi"
+      - "hey"
+      - "hello there"
+      - "good morning"
+
       Do not start this flow for questions about letters or
       taxes, or because an earlier message contained a greeting.
+      Do NOT start this flow for messages that are not a
+      greeting, such as "zxcv", "asdf qwer", or "???".
     run_pattern_completed: false
     steps:
       - action: utter_greet
@@ -24,6 +32,11 @@ flows:
       Do NOT start this flow for questions about waste tax
       itself, such as "Is waste tax the same for everyone?".
       Those belong to ask_waste_tax_info.
+
+      Do NOT start this flow for other questions about living
+      in the Netherlands, such as "How do I register at the
+      municipality?". Those are not supported: respond with
+      SearchAndReply().
     run_pattern_completed: false
     steps:
       - set_slots:
@@ -41,6 +54,11 @@ flows:
           Keep the original Dutch wording. Do not translate it.
           Do not invent a term. Do not treat "letter", "term",
           or "word" as the term itself.
+
+          When the user answers this question with a word,
+          set it as the term, even if it looks unknown or
+          meaningless, such as "blabla". The assistant checks
+          the term itself. Do not cancel the flow for it.
 
       - action: action_lookup_term
         next:
@@ -67,6 +85,11 @@ flows:
 
       Do NOT start this flow when the user asks what a term
       in a letter means. Those belong to ask_term_meaning.
+
+      Do NOT start this flow for other questions about living
+      in the Netherlands, such as "How do I register at the
+      municipality?". Those are not supported: respond with
+      SearchAndReply().
     run_pattern_completed: false
     steps:
       - set_slots:
@@ -82,7 +105,9 @@ flows:
 
           Set "confirm_understanding" when the user says it is
           clear now, says thanks, or otherwise shows they
-          understand, such as "Ah now it's clear thnx".
+          understand, such as "Ah now it's clear thnx",
+          "got it, thx", or "ok thank you, that makes sense".
+          These answers do not cancel the flow.
 
           Set "more_info" when the user wants to know more
           about waste tax, such as "tell me more".
@@ -143,6 +168,10 @@ flows:
           or typed by the user. Copy it as completely as possible.
           Do not summarise or translate it.
 
+          Only set this slot when the user gives the text of the
+          letter itself. Leave it unset for questions, such as
+          "Is waste tax the same for everyone?".
+
       - action: action_explain_letter
 
   offer_more_help:
@@ -158,8 +187,15 @@ flows:
           Whether the user has another question.
 
           Set true when the user has another question or wants
-          more help. Set false when the user is done, such as
-          "no that's it for now" or "no thanks".
+          more help, such as "yes" or "yes, I have another
+          question".
+
+          Set false when the user is done, such as "no",
+          "nope, that's all", "no thanks", "no, bye", or
+          "no that's it for now".
+
+          A "no" is an answer to this question. It does not
+          cancel the flow.
         next:
           - if: slots.anything_else
             then:
@@ -172,8 +208,15 @@ flows:
   end_conversation:
     description: |
       Close the conversation when the user says goodbye or
-      indicates they are done and need no more help,
-      such as "bye", "that's all", or "no that's it for now".
+      indicates they are done and need no more help.
+
+      Examples:
+      - "bye!"
+      - "goodbye"
+      - "that's all"
+      - "no that's it for now"
+
+      Start it with StartFlow(end_conversation).
     run_pattern_completed: false
     steps:
       - action: utter_goodbye
