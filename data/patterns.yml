@@ -1,11 +1,46 @@
 flows:
+  # Small talk ("thanks, you're nice") gets a short reply without breaking the
+  # ongoing conversation.
   pattern_chitchat:
     description: Conversation repair flow for off-topic interactions that won't disrupt the main conversation. should not respond to greetings or anything else for which there is a flow defined
     name: pattern chitchat
     steps:
       - action: utter_free_chitchat_response
+
+  # Informational questions SettleNL cannot answer yet: explain what it can do.
   pattern_search:
     description: Flow for handling knowledge-based questions
     name: pattern search
     steps:
-      - action: utter_free_chitchat_response
+      - action: utter_out_of_scope
+
+  # Diagram: "Recognized? No -> Sorry, could you rephrase?
+  # (more than 2 fails: apology + referral)"
+  pattern_cannot_handle:
+    description: Conversation repair flow for addressing failed command generation scenarios
+    name: pattern cannot handle
+    persisted_slots:
+      - rephrase_count
+    steps:
+      - noop: true
+        next:
+          - if: context.reason is "cannot_handle_chitchat"
+            then:
+              - action: utter_out_of_scope
+                next: END
+          - if: context.reason is "cannot_handle_not_supported"
+            then:
+              - action: utter_out_of_scope
+                next: END
+          - else:
+              - action: action_count_failed_attempt
+                next:
+                  - if: slots.rephrase_count > 2
+                    then:
+                      - action: utter_rephrase_referral
+                      - set_slots:
+                          - rephrase_count: 0
+                        next: END
+                  - else:
+                      - action: utter_ask_rephrase
+                        next: END

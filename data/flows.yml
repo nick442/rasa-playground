@@ -1,8 +1,158 @@
 flows:
-  transfer_money:
-    description: Help users send money to friends and family.
+  # ---------------------------------------------------------------------------
+  # Greeting: "Hi! How can I help you today?"
+  # ---------------------------------------------------------------------------
+  greet:
+    name: greet
+    description: >-
+      The user greets the assistant (e.g. "hi", "hello", "good morning") without
+      asking a question yet.
+    run_pattern_completed: false
     steps:
-      - collect: recipient
-      - collect: amount
-        description: the number of US dollars to send
-      - action: utter_transfer_complete
+      - action: utter_greet
+
+  # ---------------------------------------------------------------------------
+  # Intent ask_term_meaning
+  # Slots: term, document, sender
+  # Diagram: "Term recognized?" -> yes: explain / no: ask for exact wording,
+  # more than 2 fails: apology + referral.
+  # ---------------------------------------------------------------------------
+  ask_term_meaning:
+    name: ask term meaning
+    description: >-
+      The user does not understand an official Dutch word or phrase, for example
+      a term in a letter from the municipality or another Dutch authority (such as
+      'aanslag gemeentelijke belastingen'), and wants to know what it means.
+    run_pattern_completed: false
+    steps:
+      - set_slots:
+          - term_attempts: 0
+          - term_retry: false
+          - rephrase_count: 0
+      - id: ask_term
+        collect: term
+        description: >-
+          the Dutch word or phrase the user does not understand, copied exactly as
+          it is written in the letter. Keep the original Dutch wording, do not
+          translate it.
+      - action: action_lookup_term
+        next:
+          - if: slots.term_known
+            then:
+              - action: utter_explain_term
+                next: END
+          - if: slots.term_attempts > 2
+            then:
+              - action: utter_term_referral
+                next: END
+          - else: ask_term
+
+  # ---------------------------------------------------------------------------
+  # Intent ask_waste_tax_info (topic change)
+  # Slot: tax_type = waste tax
+  # Diagram: answer, then "User's next move?":
+  #   confirm_understanding -> "That's great to hear!" -> anything else?
+  #   more_info             -> more details, then offer the letter again
+  #   share_letter          -> explain the letter, then anything else?
+  # ---------------------------------------------------------------------------
+  ask_waste_tax_info:
+    name: ask waste tax info
+    description: >-
+      The user asks a question about waste tax (afvalstoffenheffing, the local
+      charge for collecting household waste), for example whether waste tax is
+      the same for everyone, how it is calculated or why they have to pay it.
+    run_pattern_completed: false
+    steps:
+      - set_slots:
+          - tax_type: waste_tax
+          - rephrase_count: 0
+      - id: answer_waste_tax
+        collect: waste_tax_followup
+        utter: utter_waste_tax_answer
+        ask_before_filling: true
+        description: &followup_description >-
+          what the user wants to do after the waste tax answer.
+          'confirm_understanding' if the user says it is clear now, says thanks or
+          otherwise shows they understand; 'more_info' if they want to know more
+          about waste tax; 'share_letter' if they want to share, paste or tell the
+          content of the letter they received.
+        next:
+          - if: slots.waste_tax_followup is "more_info"
+            then: give_more_details
+          - if: slots.waste_tax_followup is "share_letter"
+            then: explain_letter
+          - else: confirm_understanding
+      - id: give_more_details
+        collect: waste_tax_followup
+        utter: utter_waste_tax_details
+        ask_before_filling: true
+        description: *followup_description
+        next:
+          - if: slots.waste_tax_followup is "more_info"
+            then:
+              - action: utter_waste_tax_no_more_info
+                next: anything_else
+          - if: slots.waste_tax_followup is "share_letter"
+            then: explain_letter
+          - else: confirm_understanding
+      - id: explain_letter
+        call: share_letter_content
+        next: anything_else
+      - id: confirm_understanding
+        action: utter_glad_to_hear
+        next: anything_else
+      - id: anything_else
+        link: offer_more_help
+
+  # ---------------------------------------------------------------------------
+  # Shares letter content: explains what the letter says.
+  # Can be started by the user directly, or called from ask_waste_tax_info.
+  # ---------------------------------------------------------------------------
+  share_letter_content:
+    name: share letter content
+    description: >-
+      The user wants to share, paste or describe the text of a letter they
+      received, so the assistant can explain what the letter says.
+    run_pattern_completed: false
+    steps:
+      - action: action_check_letter_in_message
+      - collect: letter_content
+        description: the text of the letter the user received, as pasted or typed by the user
+      - action: action_explain_letter
+      - action: utter_letter_explanation
+
+  # ---------------------------------------------------------------------------
+  # "Is there anything else you want to ask?" -> yes: back to "How can I help?"
+  # no: end_conversation. Only reachable from other flows (link).
+  # ---------------------------------------------------------------------------
+  offer_more_help:
+    name: offer more help
+    if: False
+    description: Ask whether the user has another question and continue or close the conversation.
+    run_pattern_completed: false
+    steps:
+      - collect: anything_else
+        ask_before_filling: true
+        description: >-
+          true if the user has another question or wants more help, false if the
+          user is done (e.g. "no that's it for now", "no thanks").
+        next:
+          - if: slots.anything_else
+            then:
+              - action: utter_how_else_can_i_help
+                next: END
+          - else:
+              - action: utter_goodbye
+                next: END
+
+  # ---------------------------------------------------------------------------
+  # Intent end_conversation
+  # ---------------------------------------------------------------------------
+  end_conversation:
+    name: end conversation
+    description: >-
+      The user says goodbye or indicates that they are done and do not need any
+      more help (e.g. "no that's it for now", "bye", "that's all").
+    run_pattern_completed: false
+    steps:
+      - action: utter_goodbye
