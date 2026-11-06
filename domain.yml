@@ -1,45 +1,50 @@
 version: "3.1"
 
 slots:
-  # --- ask_term_meaning -------------------------------------------------------
   term:
     type: text
     mappings:
       - type: from_llm
+
   document:
     type: text
     initial_value: letter
     mappings:
       - type: controlled
+
   sender:
     type: text
     mappings:
       - type: controlled
+
   term_known:
     type: bool
     initial_value: false
     mappings:
       - type: controlled
+
   term_explanation:
     type: text
     mappings:
       - type: controlled
+
   term_attempts:
     type: float
     initial_value: 0
     mappings:
       - type: controlled
+
   term_retry:
     type: bool
     initial_value: false
     mappings:
       - type: controlled
 
-  # --- ask_waste_tax_info -----------------------------------------------------
   tax_type:
     type: text
     mappings:
       - type: controlled
+
   waste_tax_followup:
     type: categorical
     values:
@@ -49,73 +54,84 @@ slots:
     mappings:
       - type: from_llm
 
-  # --- share_letter_content ---------------------------------------------------
   letter_content:
     type: text
     mappings:
       - type: from_llm
-  letter_explanation:
-    type: text
-    mappings:
-      - type: controlled
 
-  # --- offer_more_help / repair -----------------------------------------------
   anything_else:
     type: bool
     mappings:
       - type: from_llm
+
   rephrase_count:
     type: float
     initial_value: 0
     mappings:
       - type: controlled
 
-actions:
-  - action_lookup_term
-  - action_check_letter_in_message
-  - action_explain_letter
-  - action_count_failed_attempt
-
 responses:
-  # --- greet --------------------------------------------------------------------
   utter_greet:
     - text: "Hi! How can I help you today?"
 
-  # --- ask_term_meaning -------------------------------------------------------
   utter_ask_term:
     - condition: "slots.term_retry"
       text: "Sorry, I don't know that term. Could you share the {document} or the exact wording?"
     - text: "Which word or phrase from the {document} would you like me to explain?"
 
   utter_explain_term:
-    - text: "Hey! I can help with that. {term_explanation} If you wish, you can share the {document} with me to let you know what it says."
+    - text: >
+        Hey! I can help with that. {term_explanation}
+        If you wish, you can share the {document} with me
+        to let you know what it says.
 
   utter_term_referral:
-    - condition: 'slots.sender is "municipality"'
-      text: "I'm sorry, I still don't recognise that term, and I don't want to guess about something this important. The Municipality of Nijmegen can explain your {document}: call 14 024 or use the contact form on nijmegen.nl."
-    - text: "I'm sorry, I still don't recognise that term, and I don't want to guess about something this important. The organisation that sent the {document} can explain it to you. Their phone number is usually printed on the {document}."
+    - condition: 'slots.sender == "municipality"'
+      text: >
+        I'm sorry, I still don't recognise that term, and I don't
+        want to guess about something this important. The
+        Municipality of Nijmegen can explain your {document}:
+        call 14 024 or use the contact form on nijmegen.nl.
+    - text: >
+        I'm sorry, I still don't recognise that term, and I don't
+        want to guess about something this important. The
+        organisation that sent the {document} can explain it to you.
+        Their phone number is usually printed on the {document}.
 
-  # --- ask_waste_tax_info -----------------------------------------------------
   utter_waste_tax_answer:
-    - text: "No, the waste tax actually depends on how many people live at your address. If you wish, I can tell you more about waste tax, or you could let me know the content of the letter you received."
+    - text: >
+        No, the waste tax actually depends on how many people live
+        at your address. If you wish, I can tell you more about
+        waste tax, or you could let me know the content of the
+        letter you received.
 
   utter_waste_tax_details:
-    - text: "Waste tax (afvalstoffenheffing) pays for collecting and processing household waste. Each municipality sets its own rates every year, so the amount differs per city. It is charged to the people who live at an address, not to the owner, and the municipality uses the population register (BRP) to see who lives where. If you rent, check your rental contract: sometimes the landlord pays it and includes it in your service costs. Would you like to know anything else, or do you want to share the letter you received?"
+    - text: >
+        Waste tax (afvalstoffenheffing) pays for collecting and
+        processing household waste. Each municipality sets its own
+        rates every year, so the amount differs per city. It is
+        charged to the people who live at an address, not to the
+        owner, and the municipality uses the population register
+        (BRP) to see who lives where. If you rent, check your rental
+        contract: sometimes the landlord pays it and includes it in
+        your service costs. Would you like to know anything else,
+        or do you want to share the letter you received?
 
   utter_waste_tax_no_more_info:
-    - text: "That's all I can tell you about waste tax for now. For questions about your own situation, you can contact the Municipality of Nijmegen on 14 024 or via nijmegen.nl."
+    - text: >
+        That's all I can tell you about waste tax for now. For
+        questions about your own situation, you can contact the
+        Municipality of Nijmegen on 14 024 or via nijmegen.nl.
 
   utter_glad_to_hear:
     - text: "That's great to hear!"
 
-  # --- share_letter_content ---------------------------------------------------
   utter_ask_letter_content:
-    - text: "Sure! Please type or paste the text of the letter here. You can leave out personal details like your name, address and account numbers."
+    - text: >
+        Sure! Please type or paste the text of the letter here.
+        You can leave out personal details like your name,
+        address and account numbers.
 
-  utter_letter_explanation:
-    - text: "{letter_explanation}"
-
-  # --- offer_more_help / end_conversation -------------------------------------
   utter_ask_anything_else:
     - text: "Is there anything else you want to ask?"
 
@@ -123,35 +139,57 @@ responses:
     - text: "Sure! How can I help you?"
 
   utter_goodbye:
-    - text: "Alright! Good luck, and feel free to come back whenever you have another question. Goodbye!"
+    - text: >
+        Alright! Good luck, and feel free to come back whenever
+        you have another question. Goodbye!
 
-  # --- repair -------------------------------------------------------------------
   utter_ask_rephrase:
     - text: "Sorry, could you rephrase that?"
 
   utter_rephrase_referral:
-    - text: "I'm sorry, I'm having trouble understanding you. You can also contact the Municipality of Nijmegen on 14 024 or via nijmegen.nl, they can help you further. Or try asking me again in a different way."
+    - text: >
+        I'm sorry, I'm having trouble understanding you. You can
+        also contact the Municipality of Nijmegen on 14 024 or via
+        nijmegen.nl, they can help you further. Or try asking me
+        again in a different way.
 
-  utter_out_of_scope:
-    - text: "Sorry, I can't help with that yet. Right now I can explain terms from official letters (like 'aanslag gemeentelijke belastingen') and answer questions about waste tax."
+  utter_settlenl_scope:
+    - text: >
+        Sorry, I can't help with that yet. Right now I can explain
+        terms from official letters (like 'aanslag gemeentelijke
+        belastingen') and answer questions about waste tax.
 
   utter_free_chitchat_response:
-    # Rephrased by the LLM; this text is only shown if rephrasing fails.
+    # Shown as-is only if the language model cannot rephrase it.
     - text: "Ha, thanks! Let me know if you have a question about your letter or local taxes."
       metadata:
-        rephrase: True
+        rephrase: true
         rephrase_prompt: |
-          The following is a conversation with SettleNL, an AI assistant built with Rasa.
-          SettleNL helps newcomers to the Nijmegen region (international students, expats and
-          seasonal workers) understand official Dutch letters and local taxes.
-          The assistant is helpful, patient and friendly, and uses simple English.
-          The user is making small talk. Respond briefly (one or two sentences), keeping things light,
-          and do not give any factual information about taxes or letters.
-          Context / previous conversation with the user:
-          {{history}}
-          {{current_input}}
-          Suggested AI Response:
+          The following is a conversation with SettleNL,
+          an AI assistant built with Rasa.
 
-session_config:
-  session_expiration_time: 60
-  carry_over_slots_to_new_session: false
+          SettleNL helps newcomers to the Nijmegen region
+          understand official Dutch letters and local taxes.
+
+          The user is making small talk.
+          Respond briefly in a friendly, light tone, in simple English.
+
+          Do not ask questions.
+          Do not introduce yourself again.
+          Do not give any information about taxes, letters,
+          or Dutch terms, and do not offer features that are
+          not implemented.
+
+          Here is the previous conversation:
+          {{history}}
+
+          Current user message:
+          {{current_input}}
+
+          Suggested AI response:
+
+actions:
+  - action_lookup_term
+  - action_check_letter_in_message
+  - action_explain_letter
+  - action_count_failed_attempt

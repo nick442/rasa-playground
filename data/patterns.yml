@@ -1,36 +1,45 @@
 flows:
-  # Small talk ("thanks, you're nice") gets a short reply without breaking the
-  # ongoing conversation.
   pattern_chitchat:
-    description: Conversation repair flow for off-topic interactions that won't disrupt the main conversation. should not respond to greetings or anything else for which there is a flow defined
+    description: |
+      Handle casual small talk, such as "how are you?"
+      or "you're a funny bot", without disrupting an active flow.
+
+      Do not handle greetings, questions about letters or taxes,
+      Dutch terms, or answers to questions asked by an active flow.
+
+      Responses such as "it's clear now", "tell me more", or
+      "no that's it for now" belong to the active flow.
     name: pattern chitchat
     steps:
       - action: utter_free_chitchat_response
 
-  # Informational questions SettleNL cannot answer yet: explain what it can do.
   pattern_search:
-    description: Flow for handling knowledge-based questions
+    description: |
+      Handle informational questions that are not
+      supported by the assistant's existing flows.
     name: pattern search
+    run_pattern_completed: false
     steps:
-      - action: utter_out_of_scope
+      - action: utter_settlenl_scope
 
-  # Diagram: "Recognized? No -> Sorry, could you rephrase?
-  # (more than 2 fails: apology + referral)"
   pattern_cannot_handle:
-    description: Conversation repair flow for addressing failed command generation scenarios
+    description: |
+      Handle messages the assistant could not understand.
+      Ask the user to rephrase; after more than two failed
+      attempts, apologise and refer the user to the municipality.
     name: pattern cannot handle
     persisted_slots:
       - rephrase_count
     steps:
       - noop: true
         next:
-          - if: context.reason is "cannot_handle_chitchat"
+          - if: context.reason == "cannot_handle_chitchat"
             then:
-              - action: utter_out_of_scope
+              - action: utter_settlenl_scope
                 next: END
-          - if: context.reason is "cannot_handle_not_supported"
+          - if: context.reason == "cannot_handle_not_supported"
             then:
-              - action: utter_out_of_scope
+              - action: utter_settlenl_scope
                 next: END
           - else:
               - action: action_count_failed_attempt
