@@ -17,7 +17,7 @@ The diagram shows the main conversation paths, including the bot prompts, exampl
 | `data/flows.yml` | The `greet_user`, `ask_term_meaning`, `ask_waste_tax_info`, `share_letter_content`, `offer_more_help`, and `end_conversation` flows, including questions, branches, and action calls. |
 | `domain.yml` | Slots, predefined questions and replies, and custom action names. |
 | `actions/actions.py` | The glossary of official Dutch terms, term matching, letter explanation, and the counter for failed attempts. |
-| `data/patterns.yml` | Handling small talk, unsupported informational questions, and messages the chatbot does not understand. |
+| `data/patterns.yml` | Handling small talk, unsupported informational questions, messages the chatbot does not understand, and saying goodbye when the user declines "anything else?". |
 | `config.yml` | The CALM language-understanding and conversation policies. |
 | `endpoints.yml` | The language-model and custom-action configuration. |
 | `app.py` and `frontend/` | The Flask application and browser chat interface. |

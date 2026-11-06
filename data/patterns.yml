@@ -22,6 +22,25 @@ flows:
     steps:
       - action: utter_settlenl_scope
 
+  pattern_cancel_flow:
+    description: |
+      Handle a cancelled flow. The language model often
+      cancels the flow when the user answers "no" to
+      "Is there anything else you want to ask?". The user
+      is done then, so say goodbye as in the diagram.
+    name: pattern cancel flow
+    steps:
+      - action: action_cancel_flow
+      - noop: true
+        next:
+          - if: context.canceled_name == "offer more help"
+            then:
+              - action: utter_goodbye
+                next: END
+          - else:
+              - action: utter_flow_cancelled_rasa
+                next: END
+
   pattern_cannot_handle:
     description: |
       Handle messages the assistant could not understand.
